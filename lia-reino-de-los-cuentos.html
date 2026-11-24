@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lía y el Reino de los Cuentos</title>
+<style>
+:root{--bg:#1b1640;--gold:#ffcc33;--pink:#ff5d8f;--teal:#2ec4b6;--violet:#7b5cff;--card:#fffaf0;--ink:#2b2350;--ok:#22b35e;--bad:#e5484d}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:radial-gradient(circle at 30% 20%,#2c2470,#120e2c);font-family:"Trebuchet MS","Segoe UI",Verdana,sans-serif;color:var(--ink);overflow:hidden;user-select:none;-webkit-user-select:none}
+#wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#stage{position:relative;width:960px;height:560px;flex:none;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.55)}
+canvas{display:block;width:960px;height:560px}
+.screen{position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:24px}
+.screen.show{display:flex}
+.dim{background:rgba(20,14,50,.55)}
+h1.title{margin:0;font-size:58px;line-height:1.05;color:#fff;letter-spacing:1px;text-shadow:0 4px 0 #7b5cff,0 8px 0 #2b2350,0 12px 24px rgba(0,0,0,.4)}
+.subtitle{color:#fff6c9;font-size:22px;margin:14px 0 26px;text-shadow:0 2px 0 #2b2350}
+.btn{font:inherit;font-size:22px;font-weight:bold;border:none;border-radius:16px;padding:12px 30px;margin:7px;cursor:pointer;color:#2b2350;background:var(--gold);box-shadow:0 6px 0 #c4901a;transition:transform .08s,box-shadow .08s;min-width:240px}
+.btn:hover{transform:translateY(-2px);filter:brightness(1.07)}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 #c4901a}
+.btn.pink{background:var(--pink);color:#fff;box-shadow:0 6px 0 #b8325e}
+.btn.teal{background:var(--teal);color:#fff;box-shadow:0 6px 0 #1b8a80}
+.btn.violet{background:var(--violet);color:#fff;box-shadow:0 6px 0 #4b33b8}
+.btn.small{font-size:17px;min-width:0;padding:9px 18px}
+.row{display:flex;flex-wrap:wrap;justify-content:center}
+.card{background:var(--card);border-radius:22px;padding:24px 30px;max-width:780px;width:100%;max-height:520px;overflow:auto;box-shadow:0 10px 0 rgba(43,35,80,.35);text-align:left;border:4px solid #fff}
+.card h2{margin:0 0 10px;font-size:30px;color:var(--violet)}
+.card p,.card li{font-size:18px;line-height:1.45}
+.tag{display:inline-block;padding:4px 12px;border-radius:999px;font-weight:bold;font-size:15px;color:#fff;background:var(--pink);margin-bottom:8px}
+.tag.t-fill{background:var(--teal)}.tag.t-match{background:var(--violet)}
+.story{background:#fff1c9;border-left:8px solid var(--gold);padding:12px 16px;border-radius:12px;font-size:18px;line-height:1.5;margin:10px 0}
+.concept{background:#e3f8f5;border-left:8px solid var(--teal);padding:10px 16px;border-radius:12px;font-size:17px;margin:10px 0}
+.q{font-size:21px;font-weight:bold;margin:6px 0 14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opt{font:inherit;font-size:17px;text-align:left;padding:12px 14px;border-radius:14px;border:3px solid #d9d2ff;background:#fff;cursor:pointer;color:var(--ink)}
+.opt:hover:not(:disabled){border-color:var(--violet);background:#f4f1ff}
+.opt.ok{background:#dff7e8;border-color:var(--ok)}
+.opt.bad{background:#fde4e4;border-color:var(--bad);opacity:.8;cursor:not-allowed}
+.sentence{font-size:22px;background:#fff;border-radius:14px;padding:14px;margin-bottom:14px;border:3px dashed #c8bfff}
+.slot{display:inline-block;min-width:120px;border-bottom:4px solid var(--violet);text-align:center;color:var(--violet);font-weight:bold}
+.chips{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.chip{font:inherit;font-size:20px;font-weight:bold;padding:10px 22px;border-radius:999px;border:3px solid var(--teal);background:#fff;color:#1b6f68;cursor:pointer}
+.chip:hover:not(:disabled){background:#e3f8f5}
+.chip.ok{background:var(--ok);color:#fff;border-color:var(--ok)}
+.chip.bad{background:#fde4e4;border-color:var(--bad);color:var(--bad);text-decoration:line-through;cursor:not-allowed}
+.match{display:grid;grid-template-columns:1fr 1.5fr;gap:10px 18px}
+.mcol{display:flex;flex-direction:column;gap:10px}
+.mi{font:inherit;font-size:16px;padding:10px 12px;border-radius:12px;border:3px solid #d9d2ff;background:#fff;cursor:pointer;text-align:left;color:var(--ink);min-height:52px}
+.mi.sel{border-color:var(--gold);background:#fff6d6;box-shadow:0 0 0 3px #ffe08a}
+.mi.bad{animation:shake .35s;border-color:var(--bad);background:#fde4e4}
+.mi.done{cursor:default;color:#fff;font-weight:bold}
+.m0{background:#22b35e!important;border-color:#22b35e!important}.m1{background:#2e8fd6!important;border-color:#2e8fd6!important}.m2{background:#e0761b!important;border-color:#e0761b!important}.m3{background:#a046d6!important;border-color:#a046d6!important}.m4{background:#d6457a!important;border-color:#d6457a!important}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.fb{margin-top:14px;font-size:17px;line-height:1.45;padding:10px 14px;border-radius:12px;display:none}
+.fb.show{display:block}
+.fb.good{background:#dff7e8;border:2px solid var(--ok)}
+.fb.wrong{background:#fde4e4;border:2px solid var(--bad)}
+.fb.info{background:#eef0ff;border:2px solid #c8bfff}
+.center{text-align:center}
+.big{font-size:44px;margin:4px 0;color:#fff;text-shadow:0 3px 0 #2b2350}
+.stars{font-size:40px;letter-spacing:8px;margin:0;color:#ffd43b;text-shadow:0 3px 0 #2b2350}
+#sc-final .big{font-size:32px}#sc-final .card{max-height:400px;padding:16px 24px}#sc-final .card p,#sc-final .card li{font-size:16px;line-height:1.35}
+#touch{position:absolute;left:0;right:0;bottom:10px;display:none;justify-content:space-between;padding:0 16px;pointer-events:none}
+#touch .tb{pointer-events:auto;width:78px;height:78px;border-radius:50%;border:none;background:rgba(255,255,255,.35);font-size:34px;color:#fff;margin:0 6px;touch-action:none}
+#pauseBtn{position:absolute;top:10px;right:10px;display:none}
+.kbd{display:inline-block;background:#2b2350;color:#fff;border-radius:6px;padding:1px 8px;font-size:15px;font-weight:bold;margin:0 2px}
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+<canvas id="game" width="960" height="560"></canvas>
+
+<!-- MENÚ PRINCIPAL -->
+<div id="sc-menu" class="screen show">
+  <h1 class="title">Lía y el Reino<br>de los Cuentos</h1>
+  <div class="subtitle">¡Descubre cómo se construye un cuento!</div>
+  <button class="btn" data-act="play">▶ Jugar</button>
+  <button class="btn teal" data-act="howto">📖 Instrucciones</button>
+  <div class="row">
+    <button class="btn violet small" data-act="credits">⭐ Créditos</button>
+    <button class="btn pink small" id="btnSound" data-act="sound">🔊 Sonido: Sí</button>
+    <button class="btn pink small" id="btnMusic" data-act="music">🎵 Música: Sí</button>
+  </div>
+  <div id="best" class="subtitle" style="font-size:17px;margin:12px 0 0"></div>
+</div>
+
+<!-- INSTRUCCIONES -->
+<div id="sc-howto" class="screen dim">
+  <div class="card">
+    <h2>📖 ¿Cómo se juega?</h2>
+    <p>Ayuda a <b>Lía</b> a recorrer los tres mundos del Reino de los Cuentos. Cada mundo es una parte del cuento <b>«La semilla dorada»</b>: <b>Inicio</b>, <b>Nudo</b> y <b>Desenlace</b>.</p>
+    <ul>
+      <li><span class="kbd">←</span><span class="kbd">→</span> o <span class="kbd">A</span><span class="kbd">D</span> para moverte. <span class="kbd">Espacio</span> o <span class="kbd">↑</span> para saltar. <span class="kbd">P</span> para pausar.</li>
+      <li>🪙 Recoge las <b>letras doradas</b> (+10 puntos).</li>
+      <li>📘 Golpea desde abajo los <b>libros mágicos</b> para abrir un reto: preguntas, buscar la palabra correcta o relacionar.</li>
+      <li>✅ Si aciertas al primer intento ganas 100 puntos. Si te equivocas, lee la explicación y vuelve a intentarlo.</li>
+      <li>⚫ Salta encima de los <b>borrones de tinta</b> para quitarlos del camino. Si te tocan de lado, pierdes una vida.</li>
+      <li>🚩 Las <b>banderas</b> guardan tu avance. 📖 La <b>puerta-libro</b> del final solo se abre cuando resuelves todos los retos del mundo.</li>
+    </ul>
+    <div class="center"><button class="btn" data-act="menu">Volver al menú</button></div>
+  </div>
+</div>
+
+<!-- CRÉDITOS -->
+<div id="sc-credits" class="screen dim">
+  <div class="card">
+    <h2>⭐ Créditos</h2>
+    <p>Juego educativo para la clase de <b>Español – grado sexto</b>.</p>
+    <p id="docente"></p>
+    <p>El cuento <b>«La semilla dorada»</b>, los personajes (Lía, Sara, el abuelo Ramón y Canela), los dibujos y la música fueron creados especialmente para este juego. Las imágenes se dibujan con código (Canvas) y los sonidos se generan con Web Audio, por eso el juego funciona sin internet.</p>
+    <p>Temas: inicio, nudo y desenlace; personajes principales y secundarios; narrador; tiempo y espacio.</p>
+    <div class="center"><button class="btn" data-act="menu">Volver al menú</button></div>
+  </div>
+</div>
+
+<!-- INTRO DE NIVEL -->
+<div id="sc-intro" class="screen dim">
+  <div class="card">
+    <span class="tag" id="introTag">Mundo 1</span>
+    <h2 id="introTitle"></h2>
+    <p style="margin:4px 0"><b>Lee con atención esta parte del cuento «La semilla dorada»:</b></p>
+    <div class="story" id="introStory"></div>
+    <div class="concept" id="introConcept"></div>
+    <div class="center"><button class="btn" data-act="start">¡A jugar!</button></div>
+  </div>
+</div>
+
+<!-- RETO -->
+<div id="sc-challenge" class="screen dim">
+  <div class="card" id="chCard">
+    <span class="tag" id="chTag">Pregunta</span>
+    <div class="q" id="chQ"></div>
+    <div id="chBody"></div>
+    <div class="fb" id="chFb"></div>
+    <div class="center" style="margin-top:12px"><button class="btn" id="chNext" style="display:none">Continuar ▶</button>
+    <button class="btn small violet" id="chStory">📜 Releer el cuento</button></div>
+  </div>
+</div>
+
+<!-- NIVEL COMPLETADO -->
+<div id="sc-done" class="screen dim">
+  <div class="big">¡Mundo superado! 🎉</div>
+  <div class="card" style="max-width:640px">
+    <h2 id="doneTitle"></h2>
+    <p id="doneStats"></p>
+    <div class="concept" id="doneLearn"></div>
+    <div class="center"><button class="btn" data-act="next">Siguiente mundo ▶</button></div>
+  </div>
+</div>
+
+<!-- SIN VIDAS -->
+<div id="sc-over" class="screen dim">
+  <div class="big">¡Oh, no! Te quedaste sin vidas</div>
+  <p class="subtitle">No te preocupes: cada intento te ayuda a aprender.</p>
+  <button class="btn" data-act="retry">↻ Reintentar este mundo</button>
+  <button class="btn teal" data-act="menu">Menú principal</button>
+</div>
+
+<!-- PAUSA -->
+<div id="sc-pause" class="screen dim">
+  <div class="big">Pausa</div>
+  <button class="btn" data-act="resume">▶ Continuar</button>
+  <button class="btn violet" data-act="reread">📜 Releer el cuento</button>
+  <button class="btn teal" data-act="menu">Menú principal</button>
+</div>
+
+<!-- FINAL -->
+<div id="sc-final" class="screen dim">
+  <div class="big">¡Completaste el Reino de los Cuentos! 🏆</div>
+  <div class="stars" id="finStars"></div>
+  <div class="card" style="max-width:720px">
+    <p id="finStats" style="margin-top:0"></p>
+    <div class="concept">
+      <b>Lo que aprendiste:</b>
+      <ul style="margin:6px 0">
+        <li><b>Inicio:</b> presenta personajes, tiempo, espacio y la situación inicial.</li>
+        <li><b>Nudo:</b> aparece el conflicto y los personajes actúan para enfrentarlo.</li>
+        <li><b>Desenlace:</b> se resuelve el conflicto y termina la historia.</li>
+        <li><b>Personajes:</b> el principal realiza las acciones más importantes; los secundarios lo acompañan o ayudan.</li>
+        <li><b>Narrador:</b> la voz que cuenta (protagonista, testigo u omnisciente).</li>
+        <li><b>Tiempo y espacio:</b> cuándo y dónde ocurre la historia.</li>
+      </ul>
+    </div>
+    <div class="center"><button class="btn" data-act="play">↻ Jugar de nuevo</button><button class="btn teal" data-act="menu">Menú principal</button></div>
+  </div>
+</div>
+
+<!-- CUENTO COMPLETO -->
+<div id="sc-story" class="screen dim">
+  <div class="card">
+    <h2>📜 La semilla dorada</h2>
+    <div id="fullStory"></div>
+    <div class="center"><button class="btn" id="storyBack">Volver</button></div>
+  </div>
+</div>
+
+<button class="btn small violet" id="pauseBtn" data-act="pause">❚❚ Pausa</button>
+<div id="touch"><div><button class="tb" data-k="left">◀</button><button class="tb" data-k="right">▶</button></div><div><button class="tb" data-k="jump">⤒</button></div></div>
+</div></div>
+
+<script>
+"use strict";
+/* =========================================================
+   CONFIGURACIÓN RÁPIDA PARA EL DOCENTE
+   Escriba su nombre entre las comillas para que aparezca en Créditos.
+   ========================================================= */
+const DOCENTE = "";
+
+/* ================== CUENTO ORIGINAL ================== */
+const STORY = {
+  inicio: "Había una vez, en el pequeño pueblo de Valle Claro, junto a un río de aguas tranquilas, una niña llamada <b>Sara</b> que cuidaba con su abuelo <b>Ramón</b> un huerto lleno de girasoles. Todas las tardes, después de la escuela, Sara regaba las plantas acompañada de su perro <b>Canela</b>.",
+  nudo: "Un verano, el sol calentó tanto que el río se secó y los girasoles empezaron a marchitarse. El abuelo, preocupado, le contó a Sara que en la cima de la Montaña Gris había un manantial que nunca se secaba. Sara decidió ir a buscar agua. En el camino se encontró con una niebla muy espesa y se perdió. Sara sintió miedo, pero pensó en su abuelo y siguió adelante. Entonces Canela siguió el sonido del agua y la guio hasta el manantial.",
+  desenlace: "Sara llenó su cántaro y bajó la montaña al atardecer. Ella y su abuelo regaron el huerto y, con ayuda de los vecinos, abrieron un canal desde el manantial hasta el pueblo. Desde entonces, Valle Claro nunca volvió a quedarse sin agua y los girasoles florecieron cada verano."
+};
+
+/* ================== RETOS (contenido educativo) ==================
+   type: "quiz" (pregunta), "fill" (busca la palabra correcta), "match" (relacionar)
+   En quiz/fill cada opción incorrecta explica POR QUÉ no es correcta (why). */
+const LEVEL_CHALLENGES = [
+ [ // MUNDO 1 · INICIO Y PERSONAJES
+  {type:"quiz", q:"¿Cuál es la función del INICIO de un cuento?",
+   opts:[{t:"Presentar a los personajes, el lugar, el tiempo y la situación inicial.",ok:true},
+         {t:"Resolver el problema y contar cómo termina la historia.",why:"Eso ocurre en el desenlace, la última parte del cuento."},
+         {t:"Mostrar el problema o conflicto más difícil.",why:"El conflicto aparece en el nudo, no en el inicio."},
+         {t:"Dar la opinión del lector sobre el cuento.",why:"El cuento no incluye la opinión del lector; esa la das tú después de leerlo."}],
+   exp:"El inicio (o planteamiento) nos presenta quiénes son los personajes, dónde y cuándo ocurre la historia y cómo es la situación antes de que aparezca el problema."},
+  {type:"fill", q:"Busca la palabra correcta para completar la oración.", s:"En el inicio, la niña que cuida el huerto de girasoles se llama ___.",
+   opts:[{t:"Sara",ok:true},{t:"Ramón",why:"Ramón es el abuelo de la niña."},{t:"Canela",why:"Canela es el perro que acompaña a la niña."},{t:"Valle Claro",why:"Valle Claro es el nombre del pueblo: es un lugar, no un personaje."}],
+   exp:"Sara es la protagonista o personaje principal: la historia gira alrededor de lo que ella hace."},
+  {type:"match", q:"Relaciona cada concepto con su significado.",
+   pairs:[["Inicio","Presenta personajes, lugar y situación inicial","Piensa en la primera parte del cuento."],
+          ["Personaje principal","Realiza las acciones más importantes de la historia","El principal es el centro de la historia."],
+          ["Personaje secundario","Acompaña o ayuda al personaje principal","Los secundarios apoyan al principal."],
+          ["«Había una vez»","Expresión típica para comenzar un cuento","Es una fórmula de inicio."]],
+   exp:"El inicio presenta la historia; en él conocemos al personaje principal (Sara) y a los secundarios (el abuelo Ramón y Canela)."},
+  {type:"quiz", q:"¿Por qué el abuelo Ramón es un personaje SECUNDARIO?",
+   opts:[{t:"Porque acompaña y ayuda a Sara, pero las acciones más importantes las realiza ella.",ok:true},
+         {t:"Porque aparece al final del cuento.",why:"Ramón aparece desde el inicio. Ser secundario no depende de cuándo aparece, sino de su importancia en la historia."},
+         {t:"Porque es quien narra la historia.",why:"Ramón no narra: el cuento lo cuenta una voz externa en tercera persona."},
+         {t:"Porque es una persona mayor.",why:"La edad no define si un personaje es principal o secundario; lo define su papel en la historia."}],
+   exp:"Los personajes secundarios participan en la historia y ayudan o se relacionan con el protagonista, pero no son el centro de la acción."}
+ ],
+ [ // MUNDO 2 · NUDO Y NARRADOR
+  {type:"quiz", q:"¿Qué ocurre en el NUDO de un cuento?",
+   opts:[{t:"Aparece un problema o conflicto que los personajes deben enfrentar.",ok:true},
+         {t:"Se presentan por primera vez los personajes y el lugar.",why:"Eso corresponde al inicio."},
+         {t:"La historia termina y todo vuelve a la calma.",why:"Eso corresponde al desenlace."},
+         {t:"Se escribe el título del cuento.",why:"El título no es una de las partes de la estructura del cuento (inicio, nudo y desenlace)."}],
+   exp:"El nudo (o desarrollo) es la parte central: surge un conflicto y los personajes actúan para enfrentarlo. Es el momento de mayor tensión."},
+  {type:"fill", q:"Busca la palabra correcta para completar la oración.", s:"El conflicto empieza cuando, por el fuerte calor, el río se ___.",
+   opts:[{t:"secó",ok:true},{t:"desbordó",why:"Desbordarse es salirse el agua de su cauce; en el cuento pasó lo contrario: el río se quedó sin agua."},
+         {t:"congeló",why:"Hacía mucho calor, así que el agua no podía congelarse."},{t:"llenó",why:"Si el río se hubiera llenado, los girasoles tendrían agua y no habría problema."}],
+   exp:"La sequía del río es el conflicto: rompe la situación tranquila del inicio y obliga a Sara a actuar."},
+  {type:"match", q:"Relaciona cada tipo de narrador con su descripción.",
+   pairs:[["Narrador","Voz que cuenta la historia","Es quien cuenta los hechos."],
+          ["Narrador protagonista","Cuenta su propia historia en primera persona («yo»)","El protagonista habla de sí mismo."],
+          ["Narrador testigo","Cuenta lo que vio u oyó, pero no es el protagonista","El testigo observa los hechos."],
+          ["Narrador omnisciente","Lo sabe todo, incluso lo que piensan y sienten los personajes","«Omni» significa «todo»."]],
+   exp:"El narrador es la voz que cuenta los hechos. Puede ser un personaje (protagonista o testigo) o una voz externa que lo sabe todo (omnisciente)."},
+  {type:"quiz", q:"Lee: «Sara sintió miedo, pero pensó en su abuelo y siguió adelante». ¿Qué tipo de narrador tiene el cuento?",
+   opts:[{t:"Omnisciente, porque conoce lo que Sara siente y piensa.",ok:true},
+         {t:"Protagonista, porque Sara es quien cuenta la historia.",why:"Si Sara narrara, diría «Yo sentí miedo…», en primera persona."},
+         {t:"Testigo, porque alguien vio a Sara en la montaña.",why:"Un testigo solo cuenta lo que observa; no podría saber lo que Sara piensa por dentro."},
+         {t:"El cuento no tiene narrador.",why:"Todo cuento tiene narrador: siempre hay una voz que cuenta los hechos."}],
+   exp:"El narrador usa la tercera persona («Sara sintió», «pensó») y conoce los sentimientos y pensamientos de los personajes: es un narrador omnisciente."},
+  {type:"fill", q:"Busca la palabra correcta para completar la oración.", s:"En la montaña, Sara se perdió porque había una ___ muy espesa.",
+   opts:[{t:"niebla",ok:true},{t:"lluvia",why:"En el cuento no llovía: precisamente faltaba el agua."},{t:"nieve",why:"Era verano y hacía calor; el texto habla de algo que no dejaba ver."},{t:"tormenta",why:"El texto no menciona ninguna tormenta."}],
+   exp:"La niebla es una nueva dificultad dentro del nudo: aumenta la tensión antes de que Canela guíe a Sara hasta el manantial."}
+ ],
+ [ // MUNDO 3 · DESENLACE, TIEMPO Y ESPACIO
+  {type:"quiz", q:"¿Qué sucede en el DESENLACE de un cuento?",
+   opts:[{t:"Se resuelve el conflicto y se cuenta cómo termina la historia.",ok:true},
+         {t:"Aparece por primera vez el problema.",why:"El problema aparece en el nudo."},
+         {t:"Se describe a los personajes antes de que pase algo.",why:"Eso se hace en el inicio."},
+         {t:"Se agregan nuevos problemas que nunca se resuelven.",why:"En el desenlace se cierra la historia mostrando qué pasó con el conflicto."}],
+   exp:"El desenlace es el final: muestra qué pasa con el conflicto y cómo quedan los personajes. Puede ser un final feliz, triste o abierto."},
+  {type:"fill", q:"Busca la palabra correcta para completar la oración.", s:"La expresión «Un verano» nos indica el ___ en que ocurre la historia.",
+   opts:[{t:"tiempo",ok:true},{t:"espacio",why:"El espacio es el lugar (¿dónde?); «un verano» responde a ¿cuándo?"},{t:"narrador",why:"El narrador es la voz que cuenta, no una época."},{t:"desenlace",why:"El desenlace es el final de la historia, no un momento del año."}],
+   exp:"El tiempo responde a la pregunta ¿cuándo? En este cuento hay expresiones de tiempo como «Había una vez», «un verano» y «al atardecer»."},
+  {type:"quiz", q:"¿Cuál de estos es un ESPACIO del cuento «La semilla dorada»?",
+   opts:[{t:"La Montaña Gris",ok:true},{t:"Un verano",why:"«Un verano» indica tiempo (¿cuándo?), no un lugar."},{t:"Canela",why:"Canela es un personaje: el perro de Sara."},{t:"Al atardecer",why:"«Al atardecer» indica tiempo: un momento del día."}],
+   exp:"El espacio responde a ¿dónde? Los espacios del cuento son Valle Claro, el huerto, el río, la Montaña Gris y el manantial."},
+  {type:"match", q:"Relaciona cada elemento del cuento con la pregunta que responde.",
+   pairs:[["Tiempo","¿Cuándo ocurre la historia?","Piensa en épocas, días u horas."],
+          ["Espacio","¿Dónde ocurre la historia?","Piensa en lugares."],
+          ["Personajes","¿Quiénes participan en la historia?","Piensa en quién realiza las acciones."],
+          ["Conflicto","¿Qué problema deben enfrentar?","Es lo que pone en marcha el nudo."]],
+   exp:"Tiempo (cuándo), espacio (dónde), personajes (quiénes) y conflicto (qué problema) son elementos que todo cuento necesita."},
+  {type:"match", q:"Relaciona cada parte del cuento con lo que sucede en ella.",
+   pairs:[["Inicio","Sara y su abuelo cuidan un huerto de girasoles.","Es la situación tranquila antes del problema."],
+          ["Nudo","El río se seca y Sara sube a la Montaña Gris.","Aquí aparece el problema."],
+          ["Desenlace","Abren un canal y el pueblo no vuelve a quedarse sin agua.","Aquí se soluciona el problema."]],
+   exp:"¡Excelente! Ordenaste la estructura completa del cuento: inicio → nudo → desenlace."},
+  {type:"quiz", q:"Si el cuento empezara así: «Me llamo Sara y vivo en Valle Claro con mi abuelo…», ¿qué narrador tendría?",
+   opts:[{t:"Narrador protagonista, porque Sara cuenta su propia historia en primera persona.",ok:true},
+         {t:"Narrador omnisciente, porque lo sabe todo.",why:"Aquí la voz es la de Sara («me llamo», «vivo»): habla en primera persona sobre sí misma."},
+         {t:"Narrador testigo, porque observa a Sara.",why:"Un testigo contaría lo que le pasa a otra persona; aquí Sara habla de sí misma."},
+         {t:"No se puede saber.",why:"Sí se puede: los verbos en primera persona («me llamo», «vivo») muestran quién narra."}],
+   exp:"Cuando el personaje principal cuenta su propia historia usando «yo», «me», «mi», el narrador es protagonista."}
+ ]
+];
+
+/* ================== MUNDOS (niveles) ================== */
+const T=40, ROWS=14, W=960, H=560;
+const LEVELS=[
+ {name:"Bosque del Inicio", part:"INICIO", story:STORY.inicio,
+  concept:"<b>Recuerda:</b> el <b>inicio</b> presenta a los <b>personajes</b>, el <b>lugar</b>, el <b>tiempo</b> y la <b>situación inicial</b>, antes de que aparezca el problema.",
+  learn:"En el <b>inicio</b> conocimos a Sara (personaje principal), al abuelo Ramón y a Canela (personajes secundarios) y el lugar: Valle Claro.",
+  theme:{sky:["#6fd3ff","#d8f6ff"],far:"#9ee08f",near:"#5cbf5f",dirt:"#9b6332",dirtDot:"#7d4c22",grass:"#47c24a",block:"#e39a3b",blockEdge:"#a8661d",sun:"#fff07a"},
+  width:132,
+  build(b){
+   b.ground(0,22); b.coins(5,10,3); b.q(9,8); b.enemy(16);
+   b.ground(26,50); b.plat(28,8,4); b.coins(28,7,4); b.q(36,8); b.enemy(42); b.check(46);
+   b.ground(53,82); b.col(57,10); b.col(58,9); b.coins(57,7,2); b.q(65,8); b.coins(69,10,3); b.enemy(72); b.enemy(78);
+   b.ground(85,131); b.plat(88,9,3); b.coins(88,8,3); b.check(92); b.q(98,8); b.enemy(104); b.plat(108,8,3); b.coins(108,7,3); b.enemy(114);
+   b.goal(124);
+  }},
+ {name:"Montañas del Nudo", part:"NUDO", story:STORY.nudo,
+  concept:"<b>Recuerda:</b> en el <b>nudo</b> aparece el <b>conflicto</b> (el problema) y los personajes hacen cosas para enfrentarlo. Fíjate también en <b>quién cuenta</b> la historia: el <b>narrador</b>.",
+  learn:"En el <b>nudo</b> apareció el conflicto (la sequía) y nuevas dificultades (la niebla). Descubriste que el cuento tiene un <b>narrador omnisciente</b>.",
+  theme:{sky:["#8fb7ff","#ffe1c7"],far:"#a7a3c9",near:"#7b78a8",dirt:"#8a6a5a",dirtDot:"#6d5244",grass:"#6fbf73",block:"#9c8cff",blockEdge:"#5f4fc4",sun:"#ffd38a",mountains:true},
+  width:150,
+  build(b){
+   b.ground(0,18); b.coins(6,10,3); b.q(10,8); b.enemy(15);
+   b.ground(22,30); b.plat(32,11,3); b.coins(32,9,3); b.ground(37,58); b.q(41,8); b.enemy(47); b.enemy(53); b.check(56);
+   b.ground(62,66); b.plat(68,11,3); b.coins(68,9,3); b.ground(72,95); b.col(76,10); b.col(77,9); b.col(78,8); b.q(84,8); b.enemy(88); b.enemy(92);
+   b.ground(99,149); b.check(101); b.plat(105,9,4); b.coins(105,8,4); b.q(112,8); b.enemy(117); b.plat(121,8,2); b.q(128,8); b.enemy(133); b.coins(135,10,4);
+   b.goal(142);
+  }},
+ {name:"Castillo del Desenlace", part:"DESENLACE", story:STORY.desenlace,
+  concept:"<b>Recuerda:</b> el <b>desenlace</b> resuelve el conflicto y cierra la historia. Además repasa el <b>tiempo</b> (¿cuándo?) y el <b>espacio</b> (¿dónde?).",
+  learn:"En el <b>desenlace</b> se resolvió el conflicto: el pueblo tuvo agua para siempre. También identificaste el <b>tiempo</b> y el <b>espacio</b> del cuento.",
+  theme:{sky:["#ff9a76","#ffe6a7"],far:"#c77b8f",near:"#8f5a7a",dirt:"#7a5a6e",dirtDot:"#5e4254",grass:"#e7b84a",block:"#ff7aa8",blockEdge:"#b8406c",sun:"#fff2b0",castle:true},
+  width:168,
+  build(b){
+   b.ground(0,20); b.coins(5,10,3); b.q(9,8); b.enemy(15);
+   b.ground(24,44); b.plat(26,9,3); b.coins(26,8,3); b.q(33,8); b.enemy(38); b.enemy(42); b.check(43);
+   b.ground(48,52); b.plat(54,11,2); b.coins(54,9,2); b.ground(57,80); b.check(59); b.q(62,8); b.col(68,10); b.col(69,9); b.col(70,9); b.enemy(74); b.q(77,8);
+   b.ground(84,110); b.check(86); b.plat(90,8,4); b.coins(90,7,4); b.enemy(96); b.q(100,8); b.enemy(105);
+   b.ground(114,167); b.plat(116,9,3); b.coins(116,8,3); b.q(124,8); b.enemy(129); b.enemy(134); b.coins(138,10,5);
+   b.goal(158);
+  }}
+];
+
+/* ================== SONIDO (Web Audio) ================== */
+const Sound={ac:null,sfx:true,music:true,master:null,musicTimer:null,step:0,next:0,track:null,
+ init(){ if(this.ac) return; try{ this.ac=new (window.AudioContext||window.webkitAudioContext)(); this.master=this.ac.createGain(); this.master.gain.value=0.5; this.master.connect(this.ac.destination);}catch(e){this.ac=null;} },
+ tone(f,d,type="square",v=0.15,slide=null,delay=0){ if(!this.ac) return; const t=this.ac.currentTime+delay; const o=this.ac.createOscillator(), g=this.ac.createGain(); o.type=type; o.frequency.setValueAtTime(f,t); if(slide) o.frequency.exponentialRampToValueAtTime(slide,t+d); g.gain.setValueAtTime(v,t); g.gain.exponentialRampToValueAtTime(0.0001,t+d); o.connect(g); g.connect(this.master); o.start(t); o.stop(t+d+0.02); },
+ play(n){ if(!this.sfx||!this.ac) return; const s=this;
+  ({jump:()=>s.tone(330,0.16,"square",0.09,700),
+    coin:()=>{s.tone(988,0.06,"square",0.08);s.tone(1319,0.14,"square",0.08,null,0.06);},
+    stomp:()=>s.tone(220,0.18,"triangle",0.25,70),
+    hurt:()=>s.tone(420,0.45,"sawtooth",0.12,90),
+    bump:()=>s.tone(160,0.1,"triangle",0.25),
+    open:()=>[523,659,784].forEach((f,i)=>s.tone(f,0.12,"triangle",0.15,null,i*0.07)),
+    correct:()=>[523,659,784,1047].forEach((f,i)=>s.tone(f,0.18,"square",0.09,null,i*0.08)),
+    wrong:()=>{s.tone(233,0.2,"sawtooth",0.08);s.tone(185,0.3,"sawtooth",0.08,null,0.18);},
+    click:()=>s.tone(700,0.05,"square",0.06),
+    flag:()=>[660,880,1100].forEach((f,i)=>s.tone(f,0.12,"triangle",0.15,null,i*0.09)),
+    locked:()=>s.tone(200,0.15,"square",0.08,150),
+    win:()=>[523,523,659,784,659,784,1047].forEach((f,i)=>s.tone(f,0.2,"square",0.09,null,i*0.13))
+  })[n]?.();
+ },
+ // melodías originales (notas MIDI, 0 = silencio)
+ tracks:{
+  menu:{bpm:100,mel:[67,0,72,0,76,74,72,0,69,0,72,0,74,0,0,0],bass:[48,0,0,0,53,0,0,0,45,0,0,0,43,0,0,0]},
+  l0:{bpm:128,mel:[72,0,76,79,81,0,79,76,74,0,76,72,69,0,72,0],bass:[48,0,55,0,53,0,55,0,50,0,57,0,55,0,52,0]},
+  l1:{bpm:118,mel:[69,0,72,74,76,0,74,72,69,0,67,69,72,0,0,0],bass:[45,0,52,0,43,0,50,0,41,0,48,0,40,0,47,0]},
+  l2:{bpm:132,mel:[72,74,76,0,79,0,76,0,81,79,76,0,74,0,72,0],bass:[48,0,52,0,53,0,55,0,57,0,55,0,53,0,52,0]}
+ },
+ startMusic(name){ this.stopMusic(); if(!this.ac||!this.music) return; this.track=this.tracks[name]; this.step=0; this.next=this.ac.currentTime+0.05;
+  this.musicTimer=setInterval(()=>{ const tr=this.track, sp=60/tr.bpm/2; while(this.next<this.ac.currentTime+0.15){ const m=tr.mel[this.step%16], bs=tr.bass[this.step%16], dl=this.next-this.ac.currentTime;
+    if(m) this.tone(440*Math.pow(2,(m-69)/12),sp*0.9,"triangle",0.05,null,Math.max(0,dl));
+    if(bs) this.tone(440*Math.pow(2,(bs-69)/12),sp*1.8,"sine",0.08,null,Math.max(0,dl));
+    this.step++; this.next+=sp; } },30); },
+ stopMusic(){ if(this.musicTimer){clearInterval(this.musicTimer);this.musicTimer=null;} }
+};
+
+/* ================== UTILIDADES ================== */
+const $=id=>document.getElementById(id);
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
+function store(k,v){try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v);}catch(e){return null;}}
+
+/* ================== ESTADO ================== */
+const cv=$("game"), ctx=cv.getContext("2d");
+const G={state:"menu",level:0,score:0,lives:3,letters:0,firstTry:0,answered:0,map:null,p:null,camX:0,toast:"",toastT:0,time:0,snap:null,lockMsgT:0,storyReturn:null};
+const keys={left:false,right:false,jump:false};
+let jumpBuf=0;
+
+function buildLevel(L){
+ const w=L.width, g=[]; for(let r=0;r<ROWS;r++) g.push(new Array(w).fill("."));
+ const m={grid:g,w,blocks:[],coins:[],enemies:[],checks:[],goal:null,parts:[]};
+ const b={
+  ground(x1,x2,top=12){for(let x=x1;x<=x2;x++)for(let y=top;y<ROWS;y++)g[y][x]="#";},
+  plat(x,y,n){for(let i=0;i<n;i++)g[y][x+i]="B";},
+  col(x,top){for(let y=top;y<12;y++)g[y][x]="B";},
+  q(x,y){g[y][x]="Q";m.blocks.push({x,y,i:m.blocks.length,done:false,bump:0});},
+  coins(x,y,n){for(let i=0;i<n;i++)m.coins.push({x:(x+i)*T+T/2,y:y*T+T/2,got:false,ph:Math.random()*6});},
+  enemy(x){m.enemies.push({x:x*T,y:12*T-30,w:34,h:30,vx:-55,vy:0,alive:true,squish:0,ph:Math.random()*6});},
+  check(x){m.checks.push({x:x*T,on:false});},
+  goal(x){m.goal={x:x*T,y:12*T-120,w:96,h:120};}
+ };
+ L.build(b);
+ return m;
+}
+function solid(tx,ty){ const m=G.map; if(tx<0||tx>=m.w) return true; if(ty<0||ty>=ROWS) return false; const c=m.grid[ty][tx]; return c==="#"||c==="B"||c==="Q"; }
+function blockAt(tx,ty){ return G.map.blocks.find(b=>b.x===tx&&b.y===ty); }
+
+function newPlayer(x,y){ return {x,y,w:28,h:44,vx:0,vy:0,onGround:false,face:1,inv:0,coyote:0,anim:0,dead:false}; }
+
+function loadLevel(i){
+ G.level=i; G.map=buildLevel(LEVELS[i]);
+ const ch=LEVEL_CHALLENGES[i]; if(ch.length!==G.map.blocks.length) console.warn("Retos y libros no coinciden en el nivel",i);
+ G.p=newPlayer(2*T,12*T-44); G.respawn={x:2*T,y:12*T-44}; G.camX=0;
+ G.snap={score:G.score,letters:G.letters,firstTry:G.firstTry,answered:G.answered};
+}
+
+/* ================== PANTALLAS ================== */
+const screens=["menu","howto","credits","intro","challenge","done","over","pause","final","story"];
+function show(name){ screens.forEach(s=>$("sc-"+s).classList.toggle("show",s===name)); $("pauseBtn").style.display=(name===null&&G.state==="play")?"block":"none"; $("touch").style.display=(name===null&&isTouch)?"flex":"none"; }
+const isTouch=("ontouchstart" in window)||navigator.maxTouchPoints>0;
+
+function toMenu(){ G.state="menu"; G.map=null; show("menu"); Sound.startMusic("menu"); const b=store("lia_best"); $("best").textContent=b?("🏅 Mejor puntaje: "+b):""; }
+function startGame(){ G.score=0;G.lives=3;G.letters=0;G.firstTry=0;G.answered=0; showIntro(0); }
+function showIntro(i){ loadLevel(i); G.state="intro"; const L=LEVELS[i];
+ $("introTag").textContent="Mundo "+(i+1)+" de 3 · "+L.part; $("introTitle").textContent=L.name; $("introStory").innerHTML=L.story; $("introConcept").innerHTML=L.concept; show("intro"); Sound.startMusic("menu"); }
+function beginPlay(){ G.state="play"; show(null); Sound.startMusic("l"+G.level); clearKeys(); }
+function clearKeys(){ keys.left=keys.right=keys.jump=false; jumpBuf=0; }
+function fullStoryHTML(){ return "<p class='story'><b>Inicio.</b> "+STORY.inicio+"</p><p class='story'><b>Nudo.</b> "+STORY.nudo+"</p><p class='story'><b>Desenlace.</b> "+STORY.desenlace+"</p>"; }
+function openStory(ret){ G.storyReturn=ret; $("fullStory").innerHTML=fullStoryHTML(); $("sc-story").classList.add("show"); }
+$("storyBack").onclick=()=>{ Sound.play("click"); $("sc-story").classList.remove("show"); };
+
+document.addEventListener("click",e=>{ const a=e.target.closest("[data-act]"); if(!a) return; Sound.init(); Sound.play("click"); const act=a.dataset.act;
+ if(act==="play") startGame();
+ else if(act==="howto") show("howto");
+ else if(act==="credits"){ $("docente").innerHTML=DOCENTE?("Docente: <b>"+DOCENTE+"</b>"):""; show("credits"); }
+ else if(act==="menu") toMenu();
+ else if(act==="sound"){ Sound.sfx=!Sound.sfx; a.textContent=(Sound.sfx?"🔊":"🔇")+" Sonido: "+(Sound.sfx?"Sí":"No"); }
+ else if(act==="music"){ Sound.music=!Sound.music; a.textContent="🎵 Música: "+(Sound.music?"Sí":"No"); if(Sound.music) Sound.startMusic("menu"); else Sound.stopMusic(); }
+ else if(act==="start") beginPlay();
+ else if(act==="next"){ if(G.level<LEVELS.length-1) showIntro(G.level+1); else showFinal(); }
+ else if(act==="retry"){ Object.assign(G,G.snap); G.lives=3; showIntro(G.level); }
+ else if(act==="pause") pause();
+ else if(act==="resume") beginPlay();
+ else if(act==="reread") openStory("pause");
+});
+function pause(){ if(G.state!=="play") return; G.state="paused"; show("pause"); Sound.stopMusic(); }
+
+/* ================== RETOS ================== */
+let CH=null;
+function openChallenge(block){
+ const data=LEVEL_CHALLENGES[G.level][block.i]; if(!data){block.done=true;return;}
+ G.state="challenge"; clearKeys(); Sound.play("open"); Sound.stopMusic();
+ CH={data,block,mistakes:0};
+ const tag=$("chTag"); tag.className="tag"+(data.type==="fill"?" t-fill":data.type==="match"?" t-match":"");
+ tag.textContent={quiz:"❓ Pregunta",fill:"🔎 Busca la palabra correcta",match:"🔗 Relaciona"}[data.type]+" · Reto "+(block.i+1)+" de "+G.map.blocks.length;
+ $("chQ").textContent=data.q; const body=$("chBody"); body.innerHTML=""; const fb=$("chFb"); fb.className="fb"; fb.innerHTML=""; $("chNext").style.display="none";
+ if(data.type==="quiz") renderOptions(body,data,"opt");
+ else if(data.type==="fill"){ const s=document.createElement("div"); s.className="sentence"; s.innerHTML=data.s.replace("___","<span class='slot' id='slot'>?</span>"); body.appendChild(s); renderOptions(body,data,"chip"); }
+ else renderMatch(body,data);
+ show("challenge");
+}
+function feedback(cls,html){ const fb=$("chFb"); fb.className="fb show "+cls; fb.innerHTML=html; }
+function renderOptions(body,data,kind){
+ const wrap=document.createElement("div"); wrap.className=kind==="opt"?"opts":"chips";
+ shuffle(data.opts).forEach(o=>{ const bt=document.createElement("button"); bt.className=kind; bt.textContent=o.t;
+  bt.onclick=()=>{ if(o.ok){ wrap.querySelectorAll("button").forEach(x=>x.disabled=true); bt.classList.add("ok"); if(kind==="chip") $("slot").textContent=o.t;
+      finishChallenge("<b>✅ ¡Correcto!</b> "+data.exp); }
+    else { CH.mistakes++; bt.classList.add("bad"); bt.disabled=true; Sound.play("wrong");
+      feedback("wrong","<b>❌ «"+o.t+"» no es correcto.</b> "+o.why+"<br>💡 Lee de nuevo y vuelve a intentarlo."); } };
+  wrap.appendChild(bt); });
+ body.appendChild(wrap);
+}
+function renderMatch(body,data){
+ const n=data.pairs.length; let selL=null, selR=null, matched=0;
+ const grid=document.createElement("div"); grid.className="match";
+ const lc=document.createElement("div"); lc.className="mcol"; const rc=document.createElement("div"); rc.className="mcol";
+ const hint=document.createElement("p"); hint.style.margin="0 0 10px"; hint.innerHTML="Toca un elemento de la <b>izquierda</b> y luego su pareja de la <b>derecha</b>."; body.appendChild(hint);
+ const L=shuffle(data.pairs.map((p,i)=>({t:p[0],i}))), R=shuffle(data.pairs.map((p,i)=>({t:p[1],i})));
+ const lb=[], rb=[];
+ function check(){ if(selL===null||selR===null) return; const a=lb[selL], b=rb[selR];
+  if(a.i===b.i){ a.el.className="mi done m"+matched; b.el.className="mi done m"+matched; a.el.disabled=b.el.disabled=true; matched++; Sound.play("coin");
+    feedback("good","✅ ¡Bien! «"+data.pairs[a.i][0]+"» → «"+data.pairs[a.i][1]+"».");
+    if(matched===n) finishChallenge("<b>✅ ¡Todas las parejas son correctas!</b> "+data.exp); }
+  else { CH.mistakes++; Sound.play("wrong"); [a.el,b.el].forEach(el=>{el.classList.remove("sel");el.classList.add("bad");setTimeout(()=>el.classList.remove("bad"),400);});
+    feedback("wrong","<b>❌ «"+data.pairs[a.i][0]+"» no corresponde a «"+data.pairs[b.i][1]+"».</b> 💡 "+data.pairs[a.i][2]); }
+  selL=selR=null; }
+ L.forEach((it,k)=>{ const el=document.createElement("button"); el.className="mi"; el.textContent=it.t; lb.push({i:it.i,el});
+  el.onclick=()=>{ Sound.play("click"); lb.forEach(x=>x.el.classList.remove("sel")); selL=k; el.classList.add("sel"); check(); }; lc.appendChild(el); });
+ R.forEach((it,k)=>{ const el=document.createElement("button"); el.className="mi"; el.textContent=it.t; rb.push({i:it.i,el});
+  el.onclick=()=>{ Sound.play("click"); rb.forEach(x=>x.el.classList.remove("sel")); selR=k; el.classList.add("sel"); check(); }; rc.appendChild(el); });
+ grid.appendChild(lc); grid.appendChild(rc); body.appendChild(grid);
+}
+function finishChallenge(html){
+ const m=CH.mistakes, d=CH.data; let pts;
+ if(d.type==="match") pts=Math.max(30,100-20*m); else pts=m===0?100:m===1?50:25;
+ G.score+=pts; G.answered++; if(m===0) G.firstTry++;
+ Sound.play("correct");
+ feedback("good",html+"<br><b>+"+pts+" puntos</b>"+(m===0?" ⭐ ¡Al primer intento!":""));
+ const nx=$("chNext"); nx.style.display="inline-block"; nx.focus();
+}
+$("chNext").onclick=()=>{ Sound.play("click"); CH.block.done=true; CH.block.bump=0.25;
+ const left=G.map.blocks.filter(b=>!b.done).length;
+ setToast(left?("¡Reto superado! Faltan "+left+" libros mágicos."):"¡Todos los retos superados! La puerta-libro está abierta 📖");
+ CH=null; beginPlay(); };
+$("chStory").onclick=()=>{ Sound.play("click"); openStory("challenge"); };
+function setToast(t){ G.toast=t; G.toastT=3; }
+
+/* ================== ENTRADA ================== */
+const KL=["ArrowLeft","KeyA"], KR=["ArrowRight","KeyD"], KJ=["Space","ArrowUp","KeyW"];
+addEventListener("keydown",e=>{
+ if(G.state==="play"){ if(KL.includes(e.code)) keys.left=true; if(KR.includes(e.code)) keys.right=true;
+  if(KJ.includes(e.code)){ if(!keys.jump) jumpBuf=0.13; keys.jump=true; }
+  if([...KL,...KR,...KJ].includes(e.code)) e.preventDefault();
+  if(e.code==="KeyP"||e.code==="Escape") pause(); }
+ else if(G.state==="paused"&&(e.code==="KeyP"||e.code==="Escape")) beginPlay();
+});
+addEventListener("keyup",e=>{ if(KL.includes(e.code)) keys.left=false; if(KR.includes(e.code)) keys.right=false; if(KJ.includes(e.code)) keys.jump=false; });
+document.querySelectorAll("#touch .tb").forEach(b=>{ const k=b.dataset.k;
+ b.addEventListener("pointerdown",e=>{e.preventDefault(); if(k==="jump"&&!keys.jump) jumpBuf=0.13; keys[k]=true;});
+ ["pointerup","pointercancel","pointerleave"].forEach(ev=>b.addEventListener(ev,()=>keys[k]=false)); });
+addEventListener("blur",()=>{ clearKeys(); if(G.state==="play") pause(); });
+
+/* ================== FÍSICA ================== */
+const GRAV=2100, JUMP=850, RUN=270, MAXFALL=950;
+function update(dt){
+ G.time+=dt; if(G.toastT>0) G.toastT-=dt; if(G.lockMsgT>0) G.lockMsgT-=dt;
+ const p=G.p, m=G.map;
+ m.blocks.forEach(b=>{ if(b.bump>0) b.bump-=dt; });
+ // movimiento horizontal
+ const dir=(keys.right?1:0)-(keys.left?1:0);
+ const acc=p.onGround?2400:1600;
+ if(dir){ p.vx+=dir*acc*dt; p.vx=clamp(p.vx,-RUN,RUN); p.face=dir; }
+ else { const f=(p.onGround?2600:700)*dt; p.vx=Math.abs(p.vx)<=f?0:p.vx-Math.sign(p.vx)*f; }
+ // salto
+ if(jumpBuf>0) jumpBuf-=dt; if(p.coyote>0) p.coyote-=dt;
+ if(jumpBuf>0&&p.coyote>0){ p.vy=-JUMP; p.coyote=0; jumpBuf=0; p.onGround=false; Sound.play("jump"); }
+ const g=(p.vy<0&&!keys.jump)?GRAV*2.3:GRAV;
+ p.vy=Math.min(p.vy+g*dt,MAXFALL);
+ // mover X
+ p.x+=p.vx*dt; collideX(p);
+ // mover Y
+ p.y+=p.vy*dt; const wasGround=p.onGround; p.onGround=false; collideY(p,true);
+ if(p.onGround) p.coyote=0.1;
+ p.anim+=Math.abs(p.vx)*dt*0.05;
+ if(p.inv>0) p.inv-=dt;
+ // caída al vacío
+ if(p.y>ROWS*T+60){ loseLife(true); return; }
+ // monedas (letras)
+ m.coins.forEach(c=>{ if(!c.got&&Math.abs(p.x+p.w/2-c.x)<24&&Math.abs(p.y+p.h/2-c.y)<30){ c.got=true; G.score+=10; G.letters++; Sound.play("coin"); } });
+ // banderas
+ m.checks.forEach(c=>{ if(!c.on&&p.x>c.x){ c.on=true; G.respawn={x:c.x,y:12*T-44}; Sound.play("flag"); setToast("🚩 ¡Avance guardado!"); } });
+ // enemigos
+ m.enemies.forEach(e=>{
+  if(!e.alive){ e.squish-=dt; return; }
+  if(Math.abs(e.x-p.x)>W) return; // solo se mueven cerca
+  e.ph+=dt*6; e.vy=Math.min(e.vy+GRAV*dt,MAXFALL);
+  e.x+=e.vx*dt;
+  const tyF=Math.floor((e.y+e.h+2)/T), aheadX=e.vx<0?e.x-2:e.x+e.w+2;
+  if(solid(Math.floor(aheadX/T),Math.floor((e.y+e.h/2)/T))||!solid(Math.floor(aheadX/T),tyF)){ e.vx*=-1; e.x+=e.vx*dt*2; }
+  e.y+=e.vy*dt; if(solid(Math.floor((e.x+e.w/2)/T),Math.floor((e.y+e.h)/T))){ e.y=Math.floor((e.y+e.h)/T)*T-e.h; e.vy=0; }
+  if(e.y>ROWS*T+100) e.alive=false;
+  if(p.x<e.x+e.w&&p.x+p.w>e.x&&p.y<e.y+e.h&&p.y+p.h>e.y){
+   if(p.vy>0&&p.y+p.h-e.y<22){ e.alive=false; e.squish=0.5; p.vy=-480; G.score+=50; Sound.play("stomp"); }
+   else if(p.inv<=0){ loseLife(false); p.vx=(p.x<e.x?-1:1)*320; p.vy=-380; }
+  }
+ });
+ // meta
+ const gl=m.goal;
+ if(gl&&p.x+p.w>gl.x+20&&p.x<gl.x+gl.w-20&&p.y+p.h>gl.y){
+  const left=m.blocks.filter(b=>!b.done).length;
+  if(left===0){ levelComplete(); return; }
+  else if(G.lockMsgT<=0){ G.lockMsgT=2.5; Sound.play("locked"); setToast("🔒 La puerta-libro está cerrada: te faltan "+left+(left===1?" reto":" retos")+". ¡Busca los libros mágicos!"); }
+  p.x=gl.x+20-p.w; p.vx=Math.min(p.vx,0);
+ }
+ // cámara
+ const target=clamp(p.x-W*0.4,0,m.w*T-W); G.camX+=(target-G.camX)*Math.min(1,dt*8);
+}
+function collideX(p){
+ const y0=Math.floor(p.y/T), y1=Math.floor((p.y+p.h-1)/T);
+ if(p.vx>0){ const tx=Math.floor((p.x+p.w)/T); for(let ty=y0;ty<=y1;ty++) if(solid(tx,ty)){ p.x=tx*T-p.w; p.vx=0; break; } }
+ else if(p.vx<0){ const tx=Math.floor(p.x/T); for(let ty=y0;ty<=y1;ty++) if(solid(tx,ty)){ p.x=(tx+1)*T; p.vx=0; break; } }
+}
+function collideY(p,isPlayer){
+ const x0=Math.floor((p.x+2)/T), x1=Math.floor((p.x+p.w-3)/T);
+ if(p.vy>0){ const ty=Math.floor((p.y+p.h)/T); for(let tx=x0;tx<=x1;tx++) if(solid(tx,ty)){ p.y=ty*T-p.h; p.vy=0; p.onGround=true; break; } }
+ else if(p.vy<0){ const ty=Math.floor(p.y/T);
+  // elegir el bloque más cercano al centro de la cabeza
+  let hit=null, best=1e9; for(let tx=x0;tx<=x1;tx++) if(solid(tx,ty)){ const d=Math.abs((tx+0.5)*T-(p.x+p.w/2)); if(d<best){best=d;hit=tx;} }
+  if(hit!==null){ p.y=(ty+1)*T; p.vy=0; Sound.play("bump");
+   if(isPlayer){ const b=blockAt(hit,ty); if(b){ b.bump=0.2; if(!b.done){ openChallenge(b); } } } }
+ }
+}
+function loseLife(fell){
+ G.lives--; Sound.play("hurt");
+ if(G.lives<=0){ G.state="over"; Sound.stopMusic(); show("over"); return; }
+ if(fell){ const p=G.p; p.x=G.respawn.x; p.y=G.respawn.y; p.vx=p.vy=0; }
+ G.p.inv=2; setToast(fell?"¡Cuidado con los huecos! Te quedan "+G.lives+" vidas.":"¡Un borrón te tocó! Te quedan "+G.lives+" vidas.");
+}
+function levelComplete(){
+ G.state="done"; Sound.stopMusic(); Sound.play("win"); G.score+=200;
+ const L=LEVELS[G.level], n=G.map.blocks.length, ft=G.firstTry-G.snap.firstTry;
+ $("doneTitle").textContent=L.name+" ("+L.part+")";
+ $("doneStats").innerHTML="🏁 Bono por terminar: <b>+200</b><br>⭐ Retos acertados al primer intento: <b>"+ft+" de "+n+"</b><br>🪙 Letras doradas: <b>"+(G.letters-G.snap.letters)+"</b><br>🏆 Puntaje total: <b>"+G.score+"</b>";
+ $("doneLearn").innerHTML="<b>Lo que aprendiste:</b> "+L.learn;
+ document.querySelector("#sc-done [data-act=next]").textContent=G.level<LEVELS.length-1?"Siguiente mundo ▶":"Ver resultado final 🏆";
+ show("done");
+}
+function showFinal(){
+ G.state="final"; const total=LEVEL_CHALLENGES.reduce((a,l)=>a+l.length,0), r=G.firstTry/total;
+ const stars=r>=0.8?3:r>=0.5?2:1;
+ $("finStars").textContent="★".repeat(stars)+"☆".repeat(3-stars);
+ const best=+(store("lia_best")||0); if(G.score>best) store("lia_best",String(G.score));
+ $("finStats").innerHTML="🏆 Puntaje final: <b>"+G.score+"</b>"+(G.score>best?" — ¡nuevo récord!":"")+"<br>⭐ Retos al primer intento: <b>"+G.firstTry+" de "+total+"</b><br>🪙 Letras doradas: <b>"+G.letters+"</b><br>"+
+  (stars===3?"¡Eres experto o experta en la estructura del cuento!":stars===2?"¡Muy bien! Repasa los retos en los que dudaste.":"¡Buen esfuerzo! Vuelve a jugar para reforzar lo aprendido.");
+ Sound.play("win"); show("final");
+}
+
+/* ================== DIBUJO ================== */
+function drawBackground(th,cam,t){
+ const gr=ctx.createLinearGradient(0,0,0,H); gr.addColorStop(0,th.sky[0]); gr.addColorStop(1,th.sky[1]); ctx.fillStyle=gr; ctx.fillRect(0,0,W,H);
+ // sol
+ ctx.fillStyle=th.sun; ctx.globalAlpha=0.9; ctx.beginPath(); ctx.arc(800-cam*0.02,90,46,0,7); ctx.fill(); ctx.globalAlpha=0.25; ctx.beginPath(); ctx.arc(800-cam*0.02,90,70,0,7); ctx.fill(); ctx.globalAlpha=1;
+ // nubes
+ ctx.fillStyle="rgba(255,255,255,.85)";
+ for(let i=0;i<8;i++){ const x=((i*260-cam*0.15+t*12)%(W+400)+W+400)%(W+400)-200, y=50+(i%3)*45; ctx.beginPath(); ctx.arc(x,y,24,0,7); ctx.arc(x+28,y-12,30,0,7); ctx.arc(x+60,y,24,0,7); ctx.rect(x,y,60,24); ctx.fill(); }
+ // lejanos
+ ctx.fillStyle=th.far;
+ if(th.mountains){ for(let i=-1;i<8;i++){ const x=i*220-(cam*0.25)%220; ctx.beginPath(); ctx.moveTo(x,H); ctx.lineTo(x+110,230+(i%2)*40); ctx.lineTo(x+220,H); ctx.fill(); ctx.fillStyle="#fff"; ctx.beginPath(); ctx.moveTo(x+110,230+(i%2)*40); ctx.lineTo(x+88,262+(i%2)*40); ctx.lineTo(x+132,262+(i%2)*40); ctx.fill(); ctx.fillStyle=th.far; } }
+ else if(th.castle){ const x0=-(cam*0.25)%600; for(let k=-1;k<3;k++){ const x=x0+k*600; ctx.fillRect(x+100,260,200,300); for(let j=0;j<5;j++) ctx.fillRect(x+100+j*44,240,24,22); ctx.fillRect(x+80,200,50,360); ctx.fillRect(x+270,190,50,370); ctx.beginPath(); ctx.moveTo(x+70,200); ctx.lineTo(x+105,140); ctx.lineTo(x+140,200); ctx.moveTo(x+260,190); ctx.lineTo(x+295,125); ctx.lineTo(x+330,190); ctx.fill(); } }
+ else { ctx.beginPath(); ctx.moveTo(0,H); for(let x=0;x<=W;x+=20) ctx.lineTo(x,320+Math.sin((x+cam*0.25)*0.008)*40); ctx.lineTo(W,H); ctx.fill(); }
+ // cercanos
+ ctx.fillStyle=th.near; ctx.beginPath(); ctx.moveTo(0,H); for(let x=0;x<=W;x+=20) ctx.lineTo(x,400+Math.sin((x+cam*0.5)*0.012)*30+Math.sin((x+cam*0.5)*0.031)*12); ctx.lineTo(W,H); ctx.fill();
+ // árboles/girasoles decorativos
+ for(let i=0;i<12;i++){ const x=((i*170-cam*0.5)%(W+200)+W+200)%(W+200)-100, y=405+Math.sin((x+cam*0.5)*0.012)*30;
+  if(G.level===0||G.state==="menu"){ ctx.fillStyle="#6b4a2b"; ctx.fillRect(x-4,y-40,8,44); ctx.fillStyle="#2f9e47"; ctx.beginPath(); ctx.arc(x,y-50,26,0,7); ctx.arc(x-16,y-36,18,0,7); ctx.arc(x+16,y-36,18,0,7); ctx.fill(); }
+  else if(G.level===1){ ctx.fillStyle="#5d5a86"; ctx.beginPath(); ctx.moveTo(x-18,y+4); ctx.lineTo(x,y-50); ctx.lineTo(x+18,y+4); ctx.fill(); }
+  else { ctx.fillStyle="#3f8c3a"; ctx.fillRect(x-2,y-40,4,44); ctx.fillStyle="#ffcf26"; for(let k=0;k<8;k++){ ctx.beginPath(); ctx.arc(x+Math.cos(k*0.785)*10,y-44+Math.sin(k*0.785)*10,6,0,7); ctx.fill(); } ctx.fillStyle="#6b3e1c"; ctx.beginPath(); ctx.arc(x,y-44,7,0,7); ctx.fill(); }
+ }
+}
+function drawTiles(th,cam){
+ const m=G.map, x0=Math.floor(cam/T), x1=Math.min(m.w-1,x0+Math.ceil(W/T)+1);
+ for(let ty=0;ty<ROWS;ty++) for(let tx=x0;tx<=x1;tx++){ const c=m.grid[ty][tx]; if(c===".") continue; const x=tx*T-cam, y=ty*T;
+  if(c==="#"){ ctx.fillStyle=th.dirt; ctx.fillRect(x,y,T,T); ctx.fillStyle=th.dirtDot; const s=(tx*7+ty*13)%5; ctx.fillRect(x+6+s*4,y+10+s,5,5); ctx.fillRect(x+24-s,y+26-s*2,4,4);
+   if(ty===0||m.grid[ty-1][tx]==="."){ ctx.fillStyle=th.grass; ctx.fillRect(x,y,T,11); for(let k=0;k<4;k++){ ctx.beginPath(); ctx.arc(x+5+k*10,y+11,5,0,Math.PI); ctx.fill(); } ctx.fillStyle="rgba(255,255,255,.25)"; ctx.fillRect(x,y,T,3); } }
+  else if(c==="B"){ ctx.fillStyle=th.blockEdge; rr(ctx,x+1,y+1,T-2,T-2,6); ctx.fill(); ctx.fillStyle=th.block; rr(ctx,x+3,y+3,T-6,T-9,5); ctx.fill(); ctx.fillStyle="rgba(255,255,255,.3)"; ctx.fillRect(x+7,y+7,T-14,4); }
+  else if(c==="Q"){ const b=blockAt(tx,ty); const off=b&&b.bump>0?-Math.sin(b.bump/0.2*Math.PI)*8:0; drawBook(x,y+off,b&&b.done); }
+ }
+}
+function drawBook(x,y,done){
+ if(done){ ctx.fillStyle="#8d7f6b"; rr(ctx,x+1,y+1,T-2,T-2,6); ctx.fill(); ctx.fillStyle="#b3a68f"; rr(ctx,x+4,y+4,T-8,T-8,4); ctx.fill(); ctx.fillStyle="#fff"; ctx.font="bold 24px sans-serif"; ctx.textAlign="center"; ctx.fillText("✓",x+T/2,y+29); return; }
+ const glow=0.5+0.5*Math.sin(G.time*5);
+ ctx.fillStyle="rgba(255,230,90,"+(0.25+glow*0.35)+")"; rr(ctx,x-4,y-4,T+8,T+8,10); ctx.fill();
+ ctx.fillStyle="#5b2fc9"; rr(ctx,x+1,y+1,T-2,T-2,6); ctx.fill();
+ ctx.fillStyle="#fff7dc"; ctx.fillRect(x+6,y+T-10,T-10,5); // páginas
+ ctx.fillStyle="#7c4dff"; rr(ctx,x+4,y+3,T-8,T-14,4); ctx.fill();
+ ctx.fillStyle="#3c1d93"; ctx.fillRect(x+4,y+3,5,T-14); // lomo
+ ctx.fillStyle="#ffd84a"; ctx.font="bold 16px Georgia,serif"; ctx.textAlign="center"; ctx.fillText("Aa",x+T/2+3,y+22);
+}
+function drawCoin(c,cam){ if(c.got) return; const x=c.x-cam, y=c.y+Math.sin(G.time*3+c.ph)*3, s=Math.abs(Math.cos(G.time*2.5+c.ph));
+ ctx.save(); ctx.translate(x,y); ctx.scale(Math.max(0.15,s),1); ctx.fillStyle="#c98a00"; ctx.beginPath(); ctx.arc(0,0,13,0,7); ctx.fill(); ctx.fillStyle="#ffd43b"; ctx.beginPath(); ctx.arc(0,0,10.5,0,7); ctx.fill();
+ ctx.fillStyle="#a86d00"; ctx.font="bold 14px Georgia,serif"; ctx.textAlign="center"; ctx.fillText("ABCDEFGHIJLMNOPRSTUV"[Math.floor(c.ph*3)%20],0,5); ctx.restore(); }
+function drawEnemy(e,cam){
+ if(!e.alive&&e.squish<=0) return; const x=e.x-cam, y=e.y;
+ if(!e.alive){ ctx.fillStyle="#26224a"; ctx.beginPath(); ctx.ellipse(x+e.w/2,y+e.h-5,e.w/2+4,6,0,0,7); ctx.fill(); return; }
+ const wob=Math.sin(e.ph)*2;
+ ctx.fillStyle="#26224a"; ctx.beginPath(); ctx.moveTo(x,y+e.h); ctx.quadraticCurveTo(x-2,y+4+wob,x+e.w/2,y+wob); ctx.quadraticCurveTo(x+e.w+2,y+4-wob,x+e.w,y+e.h);
+ for(let k=0;k<4;k++){ ctx.quadraticCurveTo(x+e.w-(k+0.5)*e.w/4,y+e.h-6,x+e.w-(k+1)*e.w/4,y+e.h); } ctx.fill();
+ ctx.fillStyle="#3b3570"; ctx.beginPath(); ctx.arc(x+e.w-4,y+e.h-2,4,0,7); ctx.arc(x+2,y+8,3,0,7); ctx.fill();
+ const look=e.vx<0?-2:2; ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(x+11,y+13,6,0,7); ctx.arc(x+23,y+13,6,0,7); ctx.fill();
+ ctx.fillStyle="#111"; ctx.beginPath(); ctx.arc(x+11+look,y+14,2.8,0,7); ctx.arc(x+23+look,y+14,2.8,0,7); ctx.fill();
+ ctx.strokeStyle="#fff"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x+5,y+5); ctx.lineTo(x+15,y+8); ctx.moveTo(x+29,y+5); ctx.lineTo(x+19,y+8); ctx.stroke();
+}
+function drawPlayer(p,cam){
+ if(p.inv>0&&Math.floor(p.inv*12)%2===0) return;
+ const x=Math.round(p.x-cam), y=Math.round(p.y), f=p.face, cx=x+p.w/2;
+ const sw=p.onGround?Math.sin(p.anim)*7:4;
+ ctx.save(); ctx.translate(cx,0); ctx.scale(f,1); ctx.translate(-cx,0);
+ // piernas
+ ctx.fillStyle="#3b2a5c"; ctx.fillRect(cx-8+sw*0.5,y+34,7,10); ctx.fillRect(cx+1-sw*0.5,y+34,7,10);
+ ctx.fillStyle="#e2445c"; ctx.fillRect(cx-9+sw*0.5,y+41,9,4); ctx.fillRect(cx+1-sw*0.5,y+41,9,4);
+ // cuerpo (túnica)
+ ctx.fillStyle="#18a999"; ctx.beginPath(); ctx.moveTo(cx-11,y+36); ctx.lineTo(cx-8,y+19); ctx.lineTo(cx+8,y+19); ctx.lineTo(cx+11,y+36); ctx.closePath(); ctx.fill();
+ ctx.fillStyle="#ffcc33"; ctx.fillRect(cx-9,y+28,18,3);
+ // bufanda
+ ctx.fillStyle="#ff7a2f"; ctx.fillRect(cx-8,y+17,16,5); ctx.beginPath(); ctx.moveTo(cx-6,y+18); ctx.lineTo(cx-16-Math.abs(p.vx)*0.02,y+21+Math.sin(G.time*10)*2); ctx.lineTo(cx-6,y+23); ctx.fill();
+ // brazo con lápiz
+ ctx.fillStyle="#9b6a45"; ctx.fillRect(cx+5,y+21,4,10);
+ ctx.fillStyle="#ffd43b"; ctx.fillRect(cx+6,y+27,12,4); ctx.fillStyle="#f6b18a"; ctx.beginPath(); ctx.moveTo(cx+18,y+27); ctx.lineTo(cx+22,y+29); ctx.lineTo(cx+18,y+31); ctx.fill();
+ // cabeza
+ ctx.fillStyle="#9b6a45"; ctx.beginPath(); ctx.arc(cx,y+10,10,0,7); ctx.fill();
+ // cabello
+ ctx.fillStyle="#2a1a12"; ctx.beginPath(); ctx.arc(cx-1,y+7,10.5,Math.PI,0); ctx.fill(); ctx.fillRect(cx-11,y+6,5,8);
+ ctx.beginPath(); ctx.arc(cx-12,y+4,5,0,7); ctx.fill(); // moño
+ ctx.fillStyle="#ff5d8f"; ctx.fillRect(cx-9,y+1,3,6);
+ // ojo
+ ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(cx+5,y+10,3,0,7); ctx.fill(); ctx.fillStyle="#1b1b1b"; ctx.beginPath(); ctx.arc(cx+6,y+10,1.7,0,7); ctx.fill();
+ ctx.strokeStyle="#5a2d1a"; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(cx+5,y+14,3,0.2,Math.PI-0.6); ctx.stroke();
+ ctx.fillStyle="rgba(255,120,120,.5)"; ctx.beginPath(); ctx.arc(cx+2,y+14,2.2,0,7); ctx.fill();
+ ctx.restore();
+}
+function drawCheck(c,cam){ const x=c.x-cam, y=12*T; ctx.fillStyle="#ddd"; ctx.fillRect(x,y-110,5,110); ctx.fillStyle="#bbb"; ctx.beginPath(); ctx.arc(x+2.5,y-112,5,0,7); ctx.fill();
+ const wav=Math.sin(G.time*6)*4; ctx.fillStyle=c.on?"#22b35e":"#e5484d"; ctx.beginPath(); ctx.moveTo(x+5,y-106); ctx.quadraticCurveTo(x+25,y-100+wav,x+44,y-94); ctx.lineTo(x+5,y-80); ctx.fill();
+ ctx.fillStyle="#fff"; ctx.font="bold 14px sans-serif"; ctx.textAlign="center"; ctx.fillText(c.on?"✓":"!",x+18,y-89); }
+function drawGoal(gl,cam){ const x=gl.x-cam, y=gl.y, open=G.map.blocks.every(b=>b.done);
+ if(open){ ctx.fillStyle="rgba(255,240,140,"+(0.35+0.2*Math.sin(G.time*4))+")"; ctx.beginPath(); ctx.ellipse(x+48,y+60,80,90,0,0,7); ctx.fill(); }
+ ctx.fillStyle="#7a3b16"; rr(ctx,x-6,y+4,108,116,10); ctx.fill();
+ ctx.fillStyle="#fff7dc"; rr(ctx,x,y+10,46,104,6); ctx.fill(); rr(ctx,x+50,y+10,46,104,6); ctx.fill();
+ ctx.strokeStyle="#d9c8a0"; ctx.lineWidth=2; for(let k=0;k<6;k++){ ctx.beginPath(); ctx.moveTo(x+8,y+28+k*13); ctx.lineTo(x+38,y+28+k*13); ctx.moveTo(x+58,y+28+k*13); ctx.lineTo(x+88,y+28+k*13); ctx.stroke(); }
+ ctx.fillStyle=open?"#ffd43b":"#555"; ctx.font="bold 15px sans-serif"; ctx.textAlign="center"; ctx.fillText(open?"¡FIN!":"🔒",x+48,y-6);
+ if(open){ for(let k=0;k<5;k++){ const a=G.time*2+k*1.25; ctx.fillStyle="#fff59d"; ctx.beginPath(); ctx.arc(x+48+Math.cos(a)*60,y+60+Math.sin(a)*70,3,0,7); ctx.fill(); } } }
+function drawHUD(){
+ if(!["play","challenge","paused"].includes(G.state)) return;
+ ctx.fillStyle="rgba(27,22,64,.72)"; rr(ctx,10,10,W-150,44,14); ctx.fill();
+ ctx.font="bold 19px 'Trebuchet MS',sans-serif"; ctx.textAlign="left"; ctx.fillStyle="#fff";
+ const m=G.map, done=m.blocks.filter(b=>b.done).length;
+ ctx.fillStyle="#ff5d8f"; ctx.fillText("❤".repeat(Math.max(0,G.lives)),24,39);
+ ctx.fillStyle="#fff"; ctx.fillText("Puntos: "+G.score,120,39);
+ ctx.fillStyle="#ffd43b"; ctx.fillText("🪙 "+G.letters,290,39);
+ ctx.fillStyle="#c9b8ff"; ctx.fillText("📘 Retos: "+done+"/"+m.blocks.length,380,39);
+ ctx.fillStyle="#9ff0e6"; ctx.textAlign="right"; ctx.fillText("Mundo "+(G.level+1)+": "+LEVELS[G.level].part,W-156,39);
+ if(G.toastT>0){ ctx.globalAlpha=Math.min(1,G.toastT*2); ctx.font="bold 20px 'Trebuchet MS',sans-serif"; const tw=ctx.measureText(G.toast).width+40;
+  ctx.fillStyle="rgba(255,250,240,.95)"; rr(ctx,W/2-tw/2,70,tw,42,14); ctx.fill(); ctx.fillStyle="#2b2350"; ctx.textAlign="center"; ctx.fillText(G.toast,W/2,98); ctx.globalAlpha=1; }
+}
+function render(){
+ if(!G.map){ // fondo del menú
+  const cam=G.time*60; drawBackground(LEVELS[0].theme,cam,G.time); const th=LEVELS[0].theme;
+  for(let x=-(cam%T);x<W;x+=T){ ctx.fillStyle=th.dirt; ctx.fillRect(x,12*T,T,2*T); ctx.fillStyle=th.grass; ctx.fillRect(x,12*T,T,11); }
+  const p={x:300,y:12*T-44,w:28,h:44,face:1,onGround:true,anim:G.time*12,vx:200,inv:0}; drawPlayer(p,0);
+  drawBook(820,9*T,false); return; }
+ const th=LEVELS[G.level].theme, cam=G.camX;
+ drawBackground(th,cam,G.time); drawTiles(th,cam);
+ G.map.checks.forEach(c=>drawCheck(c,cam)); if(G.map.goal) drawGoal(G.map.goal,cam);
+ G.map.coins.forEach(c=>drawCoin(c,cam)); G.map.enemies.forEach(e=>drawEnemy(e,cam)); drawPlayer(G.p,cam);
+ drawHUD();
+}
+
+/* ================== BUCLE ================== */
+let last=performance.now();
+function loop(now){ let dt=Math.min(0.05,(now-last)/1000); last=now;
+ if(G.state==="play"){ const steps=2; for(let i=0;i<steps&&G.state==="play";i++) update(dt/steps); } else G.time+=dt;
+ render(); requestAnimationFrame(loop); }
+function fit(){ const s=Math.min(innerWidth/960,innerHeight/560); $("stage").style.transform="scale("+s+")"; }
+addEventListener("resize",fit); fit();
+toMenu(); requestAnimationFrame(loop);
+// la música del menú necesita un primer clic (regla de los navegadores)
+document.addEventListener("pointerdown",()=>{ if(!Sound.ac){ Sound.init(); if(G.state==="menu") Sound.startMusic("menu"); } },{once:true});
+</script>
+</body>
+</html>
